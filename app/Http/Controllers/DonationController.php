@@ -18,12 +18,12 @@ class DonationController extends Controller
         return view('donations.index', compact('donations'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $causes = Cause::orderBy('name')->get();
-
-        // Suggest the cause with the highest outstanding balance
-        $suggested = $causes->sortByDesc(fn($c) => $c->balance())->first();
+        $suggested = $request->cause_id
+            ? $causes->firstWhere('id', $request->cause_id)
+            : $causes->sortByDesc(fn($c) => $c->balance())->first();
 
         return view('donations.create', compact('causes', 'suggested'));
     }

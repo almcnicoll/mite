@@ -53,10 +53,17 @@ class UserController extends Controller
             'colour'         => 'nullable|string|size:7',
             'picture'        => 'nullable|image|max:2048',
             'rotation_order' => 'required|integer|unique:users,rotation_order,' . $user->id,
+            'password'       => 'nullable|string|min:6',
         ]);
 
         if ($request->hasFile('picture')) {
             $validated['picture'] = $request->file('picture')->store('pictures', 'public');
+        }
+
+        if (!empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        } else {
+            unset($validated['password']);
         }
 
         $user->update($validated);
