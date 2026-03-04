@@ -11,9 +11,5 @@ Route::resource('users',    UserController::class)->except(['show']);
 Route::resource('causes',   CauseController::class);
 Route::resource('donations', DonationController::class)->only(['index', 'create', 'store', 'destroy']);
 Route::resource('setup',    SetupController::class)->only(['index', 'create', 'store']);
+Route::get('/today', [PickController::class, 'today'])->name('picks.today');
 Route::resource('picks',    PickController::class)->only(['index', 'edit', 'update', 'store']);
-Route::get('/', [PickController::class, 'today'])->name('picks.today');
-
-Route::get('/', function () {
-    return view('welcome');
-});
