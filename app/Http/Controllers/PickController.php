@@ -21,11 +21,16 @@ class PickController extends Controller
     // The main daily screen — loads or creates today's pick
     public function today()
     {
-        $pick   = Pick::todayOrCreate();
-        $causes = Cause::orderBy('name')->get();
-        $users  = User::orderBy('rotation_order')->get();
+        $pick     = Pick::todayOrCreate();
+        $causes   = Cause::orderBy('name')->get();
+        $users    = User::orderBy('rotation_order')->get();
+        $outstanding = Pick::whereNull('cause_id')
+            ->where('date', '<', today()->toDateString())
+            ->orderBy('date')
+            ->with('user')
+            ->get();
 
-        return view('picks.today', compact('pick', 'causes', 'users'));
+        return view('picks.today', compact('pick', 'causes', 'users', 'outstanding'));
     }
 
     public function store(Request $request)
