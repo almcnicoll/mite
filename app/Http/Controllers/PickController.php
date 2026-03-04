@@ -21,16 +21,46 @@ class PickController extends Controller
     // The main daily screen — loads or creates today's pick
     public function today()
     {
-        $pick     = Pick::todayOrCreate();
-        $causes   = Cause::orderBy('name')->get();
-        $users    = User::orderBy('rotation_order')->get();
+        $pick    = Pick::todayOrCreate();
+        $causes  = Cause::orderBy('name')->get();
+        $users   = User::orderBy('rotation_order')->get();
+
         $outstanding = Pick::whereNull('cause_id')
             ->where('date', '<', today()->toDateString())
             ->orderBy('date')
             ->with('user')
             ->get();
 
-        return view('picks.today', compact('pick', 'causes', 'users', 'outstanding'));
+        // Build 5 featured causes for the circle UI
+        $featured = collect();
+
+        if ($pick->user_id) {
+            $featured = Pick::where('user_id', $pick->user_id)
+                ->whereNotNull('cause_id')
+                ->orderByDesc('date')
+                ->with('cause')
+                ->get()
+                ->pluck('cause')
+                ->unique('id')
+                ->take(5);
+        }
+
+        // Fill remaining slots with random causes not already featured
+        $featuredIds = $featured->pluck('id')->toArray();
+        $filler = $causes->whereNotIn('id', $featuredIds)
+            ->shuffle()
+            ->take(5 - $featured->count());
+
+        $featured = $featured->concat($filler);
+
+        // Pad to exactly 5 with nulls (shown as grey empty circles)
+        while ($featured->count() < 5) {
+            $featured->push(null);
+        }
+
+        return view('picks.today', compact(
+            'pick', 'causes', 'users', 'outstanding', 'featured'
+        ));
     }
 
     public function store(Request $request)
