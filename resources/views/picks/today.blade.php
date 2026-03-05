@@ -60,6 +60,12 @@
             </div>
             <div class="circles-add-col">
                 <a href="{{ route('causes.create') }}" class="add-cause-btn" title="Add new cause">+</a>
+                <svg id="piggy-bank"
+                    style="width:120px; margin-top:1rem; display:block;"
+                    role="img"
+                    aria-label="Piggy bank">
+                    <use href="{{ asset('images/piggy-bank.svg') }}#svgRoot"></use>
+                </svg>
             </div>
         </div>
 
@@ -301,13 +307,37 @@
 <script>
 $(function () {
 
+    // ── Animation configuration ───────────────────────────────
+    // Adjust these to tune the effect without touching logic below
+
+    var ANIM_DURATION_MS   = 600;   // total flight time in milliseconds
+    var SHRINK_TO          = 0.08;  // fraction of original size at destination (0.1 = 10%)
+    var BOUNCE_EASING      = 'swing'; // 'swing' or 'linear' (add jQuery UI for 'easeInBack' etc.)
+
+    // Fine-tune where on the piggy bank image the circle flies to.
+    // 0,0 = exact top-centre of the image as computed from its bounding rect.
+    // Positive x moves right, positive y moves down.
+    var PIGGY_X_TWEAK      = 0;     // pixels, horizontal fine-tune
+    var PIGGY_Y_TWEAK      = 10;    // pixels, vertical fine-tune
+
+    // ── State ─────────────────────────────────────────────────
+
+    var selectedCircleEl = null;  // the actual DOM circle element last clicked
+
     // ── Helpers ──────────────────────────────────────────────
 
-    function setSelectedCause(causeId) {
+    function setSelectedCause(causeId, circleEl) {
         $('.cause-circle').removeClass('selected');
+        selectedCircleEl = null;
+
         if (causeId) {
-            $('.cause-circle[data-id="' + causeId + '"]').addClass('selected');
+            var $circle = circleEl
+                ? $(circleEl)
+                : $('.cause-circle[data-id="' + causeId + '"]');
+            $circle.addClass('selected');
+            selectedCircleEl = $circle.length ? $circle[0] : null;
         }
+
         $('#hidden-cause-id').val(causeId || '');
         $('#cause-select').val(causeId || '');
         refreshSubmitState();
@@ -344,17 +374,98 @@ $(function () {
         refreshSubmitState();
     }
 
+    // ── Piggy bank target position ────────────────────────────
+    // Returns the pixel coordinates (page-relative) of the coin slot:
+    // top-centre of the piggy bank image, plus tweaks.
+
+    function piggyTarget() {
+        var piggy  = document.getElementById('piggy-bank');
+        var rect   = piggy.getBoundingClientRect();
+        var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        return {
+            x: rect.left + scrollX + (rect.width / 2) + PIGGY_X_TWEAK,
+            y: rect.top  + scrollY                    + PIGGY_Y_TWEAK
+        };
+    }
+
+    // ── Circle-to-piggy animation, then submit ────────────────
+
+    function animateAndSubmit() {
+        if (!selectedCircleEl) {
+            // No circle was used — just submit directly
+            document.getElementById('pick-form').submit();
+            return;
+        }
+
+        var $circle = $(selectedCircleEl);
+        var rect    = selectedCircleEl.getBoundingClientRect();
+        var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        var startW  = rect.width;
+        var startH  = rect.height;
+        var startX  = rect.left + scrollX;
+        var startY  = rect.top  + scrollY;
+
+        // Clone the circle and place it in body at the same absolute position
+        var $clone = $circle.clone()
+            .removeClass('selected')
+            .css({
+                position:  'absolute',
+                left:      startX,
+                top:       startY,
+                width:     startW,
+                height:    startH,
+                margin:    0,
+                zIndex:    9999,
+                pointerEvents: 'none',
+                transition: 'none'
+            })
+            .appendTo('body');
+
+        // Target: centre the (shrunk) clone over the piggy slot
+        var target    = piggyTarget();
+        var endW      = startW * SHRINK_TO;
+        var endH      = startH * SHRINK_TO;
+        var endX      = target.x - (endW / 2);
+        var endY      = target.y - (endH / 2);
+
+        // Hide the original circle during flight
+        $circle.css('visibility', 'hidden');
+
+        // Animate position and size simultaneously
+        $clone.animate(
+            {
+                left:   endX,
+                top:    endY,
+                width:  endW,
+                height: endH
+            },
+            {
+                duration: ANIM_DURATION_MS,
+                easing:   BOUNCE_EASING,
+                complete: function () {
+                    $clone.remove();
+                    document.getElementById('pick-form').submit();
+                }
+            }
+        );
+    }
+
     // ── Circle clicks ─────────────────────────────────────────
 
     $(document).on('click', '.cause-circle:not(.empty)', function () {
-        setSelectedCause($(this).data('id'));
+        setSelectedCause($(this).data('id'), this);
         $('#make-choice-btn').focus();
     });
 
     // ── Dropdown change ───────────────────────────────────────
+    // Selecting via dropdown clears the circle selection (no circle to animate)
 
     $('#cause-select').on('change', function () {
-        setSelectedCause($(this).val());
+        setSelectedCause($(this).val(), null);
     });
 
     // ── Guest flow ────────────────────────────────────────────
@@ -367,13 +478,18 @@ $(function () {
         refreshSubmitState();
     });
 
-    // ── Form submission ───────────────────────────────────────
+    // ── Make Choice button ────────────────────────────────────
+    // Intercept click to run animation first; actual submit happens at end of animation.
 
-    $('#pick-form').on('submit', function () {
+    $('#make-choice-btn').on('click', function (e) {
+        e.preventDefault();
+
         if (isGuestMode()) {
-            if (!guestName()) return false;
+            if (!guestName()) return;
             $('#hidden-guest-name').val(guestName());
         }
+
+        animateAndSubmit();
     });
 
     // ── Init ──────────────────────────────────────────────────
