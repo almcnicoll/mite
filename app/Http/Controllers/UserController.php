@@ -15,7 +15,8 @@ class UserController extends Controller
 
     public function create()
     {
-        return view('users.create');
+        $nextOrder = (User::max('rotation_order') ?? 0) + 1;
+        return view('users.create', compact('nextOrder'));
     }
 
     public function store(Request $request)

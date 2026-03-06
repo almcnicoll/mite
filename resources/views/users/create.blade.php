@@ -27,8 +27,8 @@
 
         <div class="form-group">
             <label for="rotation_order">Rotation order *</label>
-            <input type="number" name="rotation_order" id="rotation_order" value="{{ old('rotation_order') }}" min="1"
-                required>
+            <input type="number" name="rotation_order" id="rotation_order"
+                value="{{ old('rotation_order', $nextOrder) }}" min="1" required>
         </div>
 
         <div class="form-group">
