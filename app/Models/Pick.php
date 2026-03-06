@@ -36,8 +36,14 @@ class Pick extends Model
         return Setup::rateFor($this->date);
     }
 
-    public static function todayOrCreate(): self
+    public static function todayOrCreate(): ?self
     {
+        $nextUser = User::nextInRotation();
+
+        if (!$nextUser) {
+            return null;
+        }
+
         return self::firstOrCreate(
             ['date' => today()->toDateString()],
             ['user_id' => User::nextInRotation()?->id]

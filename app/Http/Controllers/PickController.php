@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cause;
 use App\Models\Pick;
 use App\Models\User;
+use App\Models\Setup;
 use Illuminate\Http\Request;
 
 class PickController extends Controller
@@ -21,11 +22,23 @@ class PickController extends Controller
     // The main daily screen — loads or creates today's pick
     public function today()
     {
-        $pick    = Pick::todayOrCreate();
+        if (!Setup::where('date_from', '<=', today())->exists()) {
+            return redirect()->route('setup.index')
+                ->with('error', 'Please create a setup record with a daily amount before making picks.');
+        }
+
+        $pick = Pick::todayOrCreate();
+
+        if (!$pick) {
+            return redirect()->route('users.create')
+                ->with('error', 'Please add at least one user before making picks.');
+        }
+
         $causes  = Cause::orderBy('name')->get();
         $users   = User::orderBy('rotation_order')->get();
 
         $outstanding = Pick::whereNull('cause_id')
+            ->whereNotNull('user_id')                    // exclude any orphaned guest-looking picks
             ->where('date', '<', today()->toDateString())
             ->orderBy('date')
             ->with('user')
