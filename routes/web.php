@@ -12,4 +12,8 @@ Route::resource('causes',   CauseController::class);
 Route::resource('donations', DonationController::class)->only(['index', 'create', 'store', 'destroy']);
 Route::resource('setup',    SetupController::class)->only(['index', 'create', 'store']);
 Route::get('/today', [PickController::class, 'today'])->name('picks.today');
+Route::get('/', [PickController::class, 'today'])->name('picks.today');
+Route::get('/pick/{date}', [PickController::class, 'today'])
+    ->name('picks.date')
+    ->where('date', '\d{4}-\d{2}-\d{2}');
 Route::resource('picks',    PickController::class)->only(['index', 'edit', 'update', 'store']);

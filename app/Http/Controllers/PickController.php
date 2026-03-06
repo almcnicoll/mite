@@ -20,18 +20,37 @@ class PickController extends Controller
     }
 
     // The main daily screen — loads or creates today's pick
-    public function today()
+    public function today(?string $date = null)
     {
         if (!Setup::where('date_from', '<=', today())->exists()) {
             return redirect()->route('setup.index')
                 ->with('error', 'Please create a setup record with a daily amount before making picks.');
         }
 
-        $pick = Pick::todayOrCreate();
+        $targetDate = $date ? \Carbon\Carbon::parse($date) : today();
+        $isToday    = $targetDate->isSameDay(today());
+
+        // For past dates, the pick must already exist — don't create one
+        if ($isToday) {
+            $pick = Pick::todayOrCreate();
+        } else {
+            $pick = Pick::where('date', $targetDate->toDateString())->first();
+            if (!$pick) {
+                return redirect()->route('picks.today')
+                    ->with('error', 'No pick found for ' . $targetDate->format('j M Y') . '.');
+            }
+        }
 
         if (!$pick) {
             return redirect()->route('users.create')
                 ->with('error', 'Please add at least one user before making picks.');
+        }
+
+        // Relative date label for display in view
+        $dateLabel = null;
+        if (!$isToday) {
+            $daysAgo = (int) $targetDate->diffInDays(today());
+            $dateLabel = $daysAgo === 1 ? 'yesterday' : $daysAgo . ' days ago';
         }
 
         $causes  = Cause::orderBy('name')->get();
@@ -66,13 +85,13 @@ class PickController extends Controller
 
         $featured = $featured->concat($filler);
 
-        // Pad to exactly 5 with nulls (shown as grey empty circles)
         while ($featured->count() < 5) {
             $featured->push(null);
         }
 
         return view('picks.today', compact(
-            'pick', 'causes', 'users', 'outstanding', 'featured'
+            'pick', 'causes', 'users', 'outstanding', 'featured',
+            'targetDate', 'isToday', 'dateLabel'
         ));
     }
 

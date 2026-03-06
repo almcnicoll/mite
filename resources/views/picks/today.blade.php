@@ -5,7 +5,15 @@
 @section('content')
 
 <p class="picker-label">
-    <strong>{{ today()->format('l j F Y') }}</strong>
+    @if ($isToday)
+        <strong>{{ $targetDate->format('l j F Y') }}</strong>
+    @else
+        <strong style="color: #e67e22;">
+            {{ $targetDate->format('l j F Y') }}
+            ({{ $dateLabel }})
+        </strong>
+    @endif
+
     @if ($pick->user)
         —
         @if ($pick->user->colour)
@@ -17,6 +25,12 @@
         @if ($pick->guest_name) ({{ $pick->guest_name }})@endif
     @endif
 </p>
+
+@if (!$isToday)
+    <div class="alert" style="background:#fef3cd; color:#856404; margin-bottom:1rem;">
+        You are picking for a past date.
+    </div>
+@endif
 
 @include('partials.errors')
 
@@ -119,7 +133,7 @@
                 <td>{{ $p->date->format('j M Y') }}</td>
                 <td>{{ $p->pickerName() }}</td>
                 <td>
-                    <a href="{{ route('picks.edit', $p) }}" class="btn btn-warning">Choose</a>
+                    <a href="{{ route('picks.date', ['date' => $p->date->toDateString()]) }}" class="btn btn-warning">Choose</a>
                 </td>
             </tr>
             @endforeach
