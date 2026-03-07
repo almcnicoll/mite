@@ -74,12 +74,10 @@
             </div>
             <div class="circles-add-col">
                 <a href="{{ route('causes.create') }}" class="add-cause-btn" title="Add new cause">+</a>
-                <svg id="piggy-bank"
-                    style="width:120px; margin-top:1rem; display:block;"
-                    role="img"
-                    aria-label="Piggy bank">
-                    <use href="{{ asset('images/piggy-bank.svg') }}#svgRoot"></use>
-                </svg>
+                <img id="piggy-bank"
+                    src="http://mite.test/images/piggy-bank.svg"
+                    alt="Piggy bank"
+                    style="width:120px; margin-top:1rem; display:block;">
             </div>
         </div>
 
@@ -219,7 +217,9 @@
     /* ── Add button ── */
     .circles-add-col {
         display: flex;
+        flex-direction: column;
         align-items: center;
+        gap: 1rem;
     }
 
     .add-cause-btn {
