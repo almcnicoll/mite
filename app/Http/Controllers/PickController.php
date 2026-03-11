@@ -7,6 +7,7 @@ use App\Models\Pick;
 use App\Models\User;
 use App\Models\Setup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PickController extends Controller
 {
@@ -129,5 +130,26 @@ class PickController extends Controller
         $users  = User::orderBy('rotation_order')->get();
 
         return view('picks.edit', compact('pick', 'causes', 'users'));
+    }
+
+    public function resetConfirm()
+    {
+        $count = Pick::whereNull('cause_id')
+            ->whereNotNull('user_id')
+            ->where('date', '<', today()->toDateString())
+            ->count();
+
+        return view('picks.reset', compact('count'));
+    }
+
+    public function resetExecute()
+    {
+        $deleted = Pick::whereNull('cause_id')
+            ->whereNotNull('user_id')
+            ->where('date', '<', today()->toDateString())
+            ->delete();
+
+        return redirect()->route('picks.today')
+            ->with('success', $deleted . ' outstanding ' . Str::plural('pick', $deleted) . ' removed.');
     }
 }
