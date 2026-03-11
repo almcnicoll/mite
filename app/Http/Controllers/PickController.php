@@ -152,4 +152,10 @@ class PickController extends Controller
         return redirect()->route('picks.today')
             ->with('success', $deleted . ' outstanding ' . Str::plural('pick', $deleted) . ' removed.');
     }
+
+    public function destroy(Pick $pick)
+    {
+        $pick->delete();
+        return redirect()->route('picks.index')->with('success', 'Pick deleted.');
+    }
 }

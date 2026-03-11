@@ -35,7 +35,16 @@
                     @endif
                 </td>
                 <td>
-                    <a href="{{ route('picks.edit', $pick) }}" class="btn btn-warning">Edit</a>
+                    <div class="actions">
+                        <a href="{{ route('picks.date', ['date' => $pick->date->toDateString()]) }}"
+                        class="btn btn-warning">Edit</a>
+                        <form method="POST" action="{{ route('picks.destroy', $pick) }}"
+                            onsubmit="return confirm('Delete pick for {{ $pick->date->format('j M Y') }}?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             @empty
