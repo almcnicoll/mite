@@ -89,6 +89,7 @@ class PickController extends Controller
         while ($featured->count() < 5) {
             $featured->push(null);
         }
+        $featured = $featured->values(); // re-index to 0-based
 
         return view('picks.today', compact(
             'pick', 'causes', 'users', 'outstanding', 'featured',
