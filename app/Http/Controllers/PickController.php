@@ -6,6 +6,7 @@ use App\Models\Cause;
 use App\Models\Pick;
 use App\Models\User;
 use App\Models\Setup;
+use App\Services\PickBackfillService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -27,6 +28,9 @@ class PickController extends Controller
             return redirect()->route('setup.index')
                 ->with('error', 'Please create a setup record with a daily amount before making picks.');
         }
+
+        // Fill any missing pick records for past dates before doing anything else
+        app(PickBackfillService::class)->backfill();
 
         $targetDate = $date ? \Carbon\Carbon::parse($date) : today();
         $isToday    = $targetDate->isSameDay(today());
