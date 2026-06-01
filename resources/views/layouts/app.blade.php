@@ -233,6 +233,7 @@
         <a href="{{ route('picks.index') }}">History</a>
         <a href="{{ route('causes.index') }}">Causes</a>
         <a href="{{ route('donations.index') }}">Donations</a>
+        <a href="{{ route('stats.index') }}">Stats</a>
         <a href="{{ route('users.index') }}">Users</a>
         <a href="{{ route('setup.index') }}">Setup</a>
     </nav>

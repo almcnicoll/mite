@@ -19,3 +19,4 @@ Route::get('/pick/{date}', [PickController::class, 'today'])
 Route::get('/picks/reset', [PickController::class, 'resetConfirm'])->name('picks.reset');
 Route::post('/picks/reset', [PickController::class, 'resetExecute'])->name('picks.reset.execute');
 Route::resource('picks',    PickController::class)->only(['index', 'edit', 'update', 'store', 'destroy']);
+Route::get('/stats', [App\Http\Controllers\StatsController::class, 'index'])->name('stats.index');
