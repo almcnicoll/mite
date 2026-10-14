@@ -47,3 +47,5 @@ Homestead.json
 .phpunit.result.cache
 
 # End of https://www.toptal.com/developers/gitignore/api/laravel
+# Plesk Git deploy webhook URL (embedded secret) - see CLAUDE.md "Deploying"
+.deploy-webhook-url
