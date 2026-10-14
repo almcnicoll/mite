@@ -16,14 +16,12 @@
 /node_modules
 /public/build
 /storage/pail
-/vendor
 Thumbs.db
 
 # Created by https://www.toptal.com/developers/gitignore/api/laravel
 # Edit at https://www.toptal.com/developers/gitignore?templates=laravel
 
 ### Laravel ###
-/vendor/
 node_modules/
 npm-debug.log
 yarn-error.log

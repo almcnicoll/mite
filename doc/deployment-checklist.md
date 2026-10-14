@@ -8,18 +8,26 @@ Items marked **(you)** need Plesk/server access or secrets, which I can't do. Ti
 
 ## A. Server (Plesk) — you
 
-- [ ] Create the subdomain/domain for Mite and note the **document root**. It must point at the repo's
+- [x] Create the subdomain/domain for Mite and note the **document root**. It must point at the repo's
       `public/` directory (e.g. `httpdocs/public`), not the repo root — otherwise `.env`, `vendor/`, etc.
       are web-served.
-- [ ] Set the domain's PHP to **8.2 or newer** (`composer.json` requires `^8.2`) with the usual Laravel
+- [x] Set the domain's PHP to **8.2 or newer** (`composer.json` requires `^8.2`) with the usual Laravel
       extensions (mbstring, openssl, pdo_mysql, tokenizer, xml, ctype, json, fileinfo).
-- [ ] Create a MySQL database + user for Mite; note host/name/user/password.
-- [ ] Plesk → *Git* → add the repository `https://github.com/almcnicoll/mite.git`, branch **`master`**,
+- [x] Create a MySQL database + user for Mite; note host/name/user/password.
+- [x] Plesk → *Git* → add the repository `https://github.com/almcnicoll/mite.git`, branch **`master`**,
       deployment mode **automatic** (so the webhook pulls and deploys).
-- [ ] In the Git repo's "Additional deployment actions", add the same as the other projects:
-      `composer install --no-dev --optimize-autoloader` (PastorEyes' webhook also runs `npm install`;
-      Mite has **no frontend build**, so skip npm).
-- [ ] Copy the repo's **webhook URL** (Git → repository → *Webhook / Deployment trigger URL*).
+- [x] ~~Additional deployment actions: `composer install`~~ — **not possible on this host.** Leave the
+      actions empty; Mite has no frontend build, so no npm either. See "Composer is manual" below.
+- [x] Copy the repo's **webhook URL** (Git → repository → *Webhook / Deployment trigger URL*).
+
+## Composer is manual → `vendor/` is committed
+
+The host can't run `composer` after a git deploy, so `vendor/` is committed and arrives with the pull.
+Server PHP is 8.5.4; the lockfile needs `>= 8.4`, so that's fine.
+
+- [x] `vendor/` removed from `.gitignore` and committed.
+- [ ] **Whenever packages change:** run `composer install` locally, commit `composer.json`,
+      `composer.lock` **and** `vendor/` together, then deploy. Claude flags this if it sees a lock change.
 
 ## B. First-time server setup — you (SSH or Plesk "PHP composer"/"Run command")
 
@@ -39,7 +47,7 @@ Items marked **(you)** need Plesk/server access or secrets, which I can't do. Ti
 
 ## C. Webhook wiring — us
 
-- [ ] Put the webhook URL, bare, in `.deploy-webhook-url` at the repo root (gitignored already).
+- [x] Put the webhook URL, bare, in `.deploy-webhook-url` at the repo root (gitignored already).
 - [ ] Dry run: `curl -sk -X POST -w "%{http_code}" "$(cat .deploy-webhook-url)"` → expect `204`.
 - [ ] Confirm in Plesk's Git log that a pull happened.
 
@@ -58,7 +66,7 @@ Items marked **(you)** need Plesk/server access or secrets, which I can't do. Ti
 
 ## E. First real deploy — us
 
-- [ ] `php artisan test` passes on `working`.
+- [x] `php artisan test` passes on `working`.
 - [ ] Merge `working` → `master`, push, POST webhook (Claude does this on request).
 - [ ] Verify the live site; check `storage/logs/laravel.log` on the server for errors.
 - [ ] Note in CLAUDE.md that deployment is live (replace the "not yet set up" status line) and record the

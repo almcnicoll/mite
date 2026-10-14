@@ -83,7 +83,7 @@ Deployment mechanism: the live host (Plesk shared hosting, same as the pastoreye
 projects) pulls from git via a Plesk "Git" webhook. **Only deploy when the user asks.** Pushing to
 `working` never deploys.
 
-Status: **not yet set up for mite** — work through [doc/deployment-checklist.md](doc/deployment-checklist.md).
+Status: **webhook URL is in `.deploy-webhook-url`; first deploy done, server first-run setup (`.env`, migrate, storage:link) is the user's** — see [doc/deployment-checklist.md](doc/deployment-checklist.md).
 Once the checklist is done and `.deploy-webhook-url` exists, deploy = in order:
 
 1. Make sure `working` is clean and `php artisan test` passes; otherwise stop and tell the user.
@@ -92,8 +92,16 @@ Once the checklist is done and `.deploy-webhook-url` exists, deploy = in order:
    It must be **POST** (GET does nothing) and `-k` is required (the Plesk cert doesn't validate from here;
    don't disable TLS verification anywhere else).
 4. Switch back to `working`.
-5. If the deployed commits add files under `database/migrations/`, tell the user `php artisan migrate`
-   still has to be run on the server — the webhook only pulls and installs dependencies.
+5. Flag manual steps the webhook can't do. This host **can't run composer after a deploy**, so
+   `vendor/` is **committed to git** (dev packages included — simplest) and arrives via the pull.
+   - Any change to `composer.json`/`composer.lock` must be followed by `composer install` locally and
+     committing the resulting `vendor/` changes in the same push. Never deploy a lock change without the
+     matching `vendor/`.
+   - Server PHP is **8.5.4**, local is 8.4.x; the lockfile requires `>= 8.4` (Symfony 8). Don't let the
+     lock resolve to anything needing newer than the server.
+   - New files under `database/migrations/` → tell the user `php artisan migrate --force` must be run
+     on the server (the webhook only pulls).
+   Record the last-deployed commit in the deploy summary.
 
 `.deploy-webhook-url` holds a bare URL with an embedded secret. It's gitignored. Never commit it or
 paste its contents anywhere. If it's missing or empty, say the push happened but nothing was deployed.
