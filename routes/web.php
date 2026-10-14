@@ -11,6 +11,7 @@ Route::resource('users',    UserController::class)->except(['show']);
 Route::resource('causes',   CauseController::class);
 Route::resource('donations', DonationController::class)->only(['index', 'create', 'store', 'destroy']);
 Route::resource('setup',    SetupController::class)->only(['index', 'create', 'store']);
+Route::post('/setup/threshold', [SetupController::class, 'updateThreshold'])->name('setup.threshold');
 Route::get('/today', [PickController::class, 'today'])->name('picks.today');
 Route::get('/', [PickController::class, 'today'])->name('picks.today');
 Route::get('/pick/{date}', [PickController::class, 'today'])

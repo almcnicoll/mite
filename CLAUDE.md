@@ -58,7 +58,12 @@ Key logic:
 ## Gotchas
 
 - **Uploaded pictures** go to the `public` disk (`storage/app/public/pictures`) and are referenced via
-  `asset('storage/...')`. The server needs `php artisan storage:link` run once, or avatars 404.
+  `asset('storage/...')`. The server needs `php artisan storage:link` run once (Plesk Laravel module can
+  run artisan). Symptom when `public/storage` is missing: image URLs look right but return a Laravel
+  **403** — the request falls through to Laravel's built-in `storage/{path}` route for the `local` disk,
+  which demands a signed URL. `asset()` follows the request host, so `APP_URL` doesn't affect these images.
+- **Live site**: <https://mite.almcnicoll.co.uk/> (a subdomain; `almcnicoll.co.uk/mite/` just redirects there).
+  `APP_URL` on the server should match that. No access control by decision — nothing sensitive in it.
 - `todayOrCreate()` returns null when there are no users; the controller redirects to create one. Setup
   must exist before any pick screen works (redirects to `setup.index`).
 - `Cause::totalPicked()` and `balance()` load all picks and sum per-row `Setup::rateFor` → N+1 queries.

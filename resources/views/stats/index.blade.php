@@ -44,6 +44,21 @@
         height: clamp(280px, 50vw, 480px);
     }
 
+    .ready-banner {
+        display: block;
+        width: 100%;
+        margin-bottom: 1.25rem;
+        padding: 0.8rem 1.2rem;
+        border: 2px solid #27ae60;
+        border-radius: 8px;
+        background: #eafaf1;
+        color: #1e8449;
+        font-size: 1.05rem;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+    }
+
     .chart-empty {
         text-align: center;
         padding: 2rem;
@@ -55,6 +70,16 @@
 
 @section('content')
 <h1>Stats</h1>
+
+@if (count($readyCauses))
+<button type="button" class="ready-banner" onclick="switchTab('next')">
+    @if (count($readyCauses) === 1)
+        {{ $readyCauses[0]['label'] }} is ready for a new donation
+    @else
+        {{ count($readyCauses) }} causes are ready for donations
+    @endif
+</button>
+@endif
 
 {{-- Tab navigation --}}
 <div class="tab-bar" role="tablist">
@@ -97,6 +122,23 @@
         </div>
     @else
         <p class="chart-empty">Nothing pending — either no picks exist yet, or all raised funds have already been donated.</p>
+    @endif
+
+    @if (count($readyCauses))
+    <h2 style="margin-top:1.5rem;">Ready for donation (over £{{ number_format($threshold, 2) }})</h2>
+    <table>
+        <thead>
+            <tr><th>Cause</th><th>Next donation</th></tr>
+        </thead>
+        <tbody>
+            @foreach ($readyCauses as $row)
+            <tr>
+                <td>{{ $row['label'] }}</td>
+                <td>£{{ number_format($row['amount'], 2) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
     @endif
 </div>
 

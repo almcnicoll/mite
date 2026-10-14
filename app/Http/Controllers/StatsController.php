@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cause;
 use App\Models\Donation;
 use App\Models\Pick;
+use App\Models\Setting;
 use App\Models\Setup;
 use Illuminate\Support\Collection;
 
@@ -81,6 +82,10 @@ class StatsController extends Controller
         usort($allTimeData,      fn ($a, $b) => $b['amount'] <=> $a['amount']);
         usort($nextDonationData, fn ($a, $b) => $b['amount'] <=> $a['amount']);
 
-        return view('stats.index', compact('allTimeData', 'nextDonationData'));
+        // Already sorted descending, so the filtered list keeps that order.
+        $threshold   = Setting::donationThreshold();
+        $readyCauses = array_values(array_filter($nextDonationData, fn ($r) => $r['amount'] > $threshold));
+
+        return view('stats.index', compact('allTimeData', 'nextDonationData', 'threshold', 'readyCauses'));
     }
 }

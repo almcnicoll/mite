@@ -29,6 +29,9 @@ Server PHP is 8.5.4; the lockfile needs `>= 8.4`, so that's fine.
 - [ ] **Whenever packages change:** run `composer install` locally, commit `composer.json`,
       `composer.lock` **and** `vendor/` together, then deploy. Claude flags this if it sees a lock change.
 
+> **Note:** the app was already live at <https://mite.almcnicoll.co.uk/> before this workflow existed, so
+> most of section B was already done. Remaining known gap: `php artisan storage:link` (images 403 without it).
+
 ## B. First-time server setup — you (SSH or Plesk "PHP composer"/"Run command")
 
 - [ ] Create `.env` on the server from `.env.example`. Set: `APP_ENV=production`, `APP_DEBUG=false`,
@@ -58,9 +61,7 @@ Server PHP is 8.5.4; the lockfile needs `>= 8.4`, so that's fine.
 - [x] `CLAUDE.md` documents workflow + deploy procedure.
 - [ ] Fix `.env.example` defaults for Mite (`APP_NAME=Mite`, `DB_CONNECTION=mysql`) so server setup is
       less error-prone. *(small; say if you'd like it)*
-- [ ] Decide on access control: the app has **no authentication**, so once it's on a public URL anyone
-      can edit it. Options: Plesk password-protected directory (zero code), HTTP basic auth middleware, or
-      real login. Needs your decision **before** go-live.
+- [x] Access control: decided none needed (nothing sensitive). Revisit if that changes.
 - [ ] Remove the unused Vite/Tailwind scaffold (`package.json`, `vite.config.js`, `resources/css|js`)?
       Optional; avoids Plesk/npm confusion.
 
