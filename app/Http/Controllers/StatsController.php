@@ -72,6 +72,7 @@ class StatsController extends Controller
             ];
 
             $nextDonationData[] = [
+                'id'     => $cause->id,
                 'label'  => $cause->name,
                 'amount' => round($pending, 2),
                 'colour' => $cause->colour ?? '#2980b9',
@@ -84,7 +85,7 @@ class StatsController extends Controller
 
         // Already sorted descending, so the filtered list keeps that order.
         $threshold   = Setting::donationThreshold();
-        $readyCauses = array_values(array_filter($nextDonationData, fn ($r) => $r['amount'] > $threshold));
+        $readyCauses = array_values(array_filter($nextDonationData, fn ($r) => $r['amount'] >= $threshold));
 
         return view('stats.index', compact('allTimeData', 'nextDonationData', 'threshold', 'readyCauses'));
     }

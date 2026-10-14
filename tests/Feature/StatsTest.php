@@ -31,12 +31,27 @@ class StatsTest extends TestCase
         return $cause;
     }
 
-    public function test_no_banner_at_or_below_default_threshold(): void
+    public function test_no_banner_below_default_threshold(): void
     {
         Setup::create(['date_from' => '2000-01-01', 'amount_per_day' => 5]);
-        $this->causeWithEarnings('Small', 10); // £50 exactly: not "above"
+        $this->causeWithEarnings('Small', 9); // £45
 
         $this->get('/stats')->assertOk()->assertDontSee('ready for');
+    }
+
+    public function test_banner_at_exactly_the_threshold_with_donate_link(): void
+    {
+        Setup::create(['date_from' => '2000-01-01', 'amount_per_day' => 5]);
+        $cause = $this->causeWithEarnings('Exact', 10); // £50 exactly
+
+        $this->get('/stats')->assertOk()
+            ->assertSee('Exact is ready for a new donation')
+            ->assertSee('Donate now')
+            ->assertSee(route('donations.create', ['cause_id' => $cause->id]), false);
+
+        $this->get(route('donations.create', ['cause_id' => $cause->id]))
+            ->assertOk()
+            ->assertSee('value="50.00"', false);
     }
 
     public function test_single_cause_banner_and_table(): void

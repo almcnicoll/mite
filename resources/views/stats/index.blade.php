@@ -125,16 +125,20 @@
     @endif
 
     @if (count($readyCauses))
-    <h2 style="margin-top:1.5rem;">Ready for donation (over £{{ number_format($threshold, 2) }})</h2>
+    <h2 style="margin-top:1.5rem;">Ready for donation (£{{ number_format($threshold, 2) }} or more)</h2>
     <table>
         <thead>
-            <tr><th>Cause</th><th>Next donation</th></tr>
+            <tr><th>Cause</th><th>Next donation</th><th></th></tr>
         </thead>
         <tbody>
             @foreach ($readyCauses as $row)
             <tr>
                 <td>{{ $row['label'] }}</td>
                 <td>£{{ number_format($row['amount'], 2) }}</td>
+                <td>
+                    <a href="{{ route('donations.create', ['cause_id' => $row['id']]) }}"
+                       class="btn btn-success">Donate now</a>
+                </td>
             </tr>
             @endforeach
         </tbody>

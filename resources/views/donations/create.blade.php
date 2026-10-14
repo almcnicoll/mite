@@ -35,7 +35,7 @@
         <div class="form-group">
             <label for="amount">Amount (£) *</label>
             <input type="number" name="amount" id="amount" step="0.01" min="0.01"
-                value="{{ old('amount', $suggested ? number_format($suggested->balance(), 2) : '') }}" required>
+                value="{{ old('amount', $suggested ? number_format($suggested->balance(), 2, '.', '') : '') }}" required>
         </div>
 
         <div class="actions">
