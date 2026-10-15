@@ -5,30 +5,6 @@
 @section('head')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
-    .tab-bar {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-    }
-
-    .tab-btn {
-        padding: 0.6rem 1.2rem;
-        border: 2px solid #2c3e50;
-        border-radius: 8px;
-        background: white;
-        color: #2c3e50;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.15s, color 0.15s;
-        min-height: 48px;
-    }
-
-    .tab-btn.active {
-        background: #2c3e50;
-        color: white;
-    }
-
     .tab-panel {
         display: none;
     }
@@ -72,7 +48,7 @@
 <h1>Stats</h1>
 
 @if (count($readyCauses))
-<button type="button" class="ready-banner" onclick="switchTab('next')">
+<button type="button" class="ready-banner" onclick="tabs.select('next')">
     @if (count($readyCauses) === 1)
         {{ $readyCauses[0]['label'] }} is ready for a new donation
     @else
@@ -81,25 +57,8 @@
 </button>
 @endif
 
-{{-- Tab navigation --}}
-<div class="tab-bar" role="tablist">
-    <button class="tab-btn active"
-            role="tab"
-            aria-selected="true"
-            aria-controls="panel-alltime"
-            id="tab-alltime"
-            onclick="switchTab('alltime')">
-        All Time
-    </button>
-    <button class="tab-btn"
-            role="tab"
-            aria-selected="false"
-            aria-controls="panel-next"
-            id="tab-next"
-            onclick="switchTab('next')">
-        Next Donation
-    </button>
-</div>
+{{-- Tab navigation (shared selector; last choice is remembered per browser) --}}
+@include('partials.tab-bar', ['tabs' => ['alltime' => 'All Time', 'next' => 'Next Donation']])
 
 {{-- All Time panel --}}
 <div class="tab-panel active card" id="panel-alltime" role="tabpanel" aria-labelledby="tab-alltime">
@@ -151,20 +110,12 @@
 const allTimeData      = @json($allTimeData);
 const nextDonationData = @json($nextDonationData);
 
-// ── Tab switching ──────────────────────────────────────────────────────────────
-function switchTab(name) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        btn.setAttribute('aria-selected', 'false');
-    });
+// ── Tab switching (remembered per browser via miteTabs in the layout) ──────────
+const tabs = miteTabs('stats', 'alltime', name => {
     document.querySelectorAll('.tab-panel').forEach(panel => {
-        panel.classList.remove('active');
+        panel.classList.toggle('active', panel.id === 'panel-' + name);
     });
-
-    document.getElementById('tab-' + name).classList.add('active');
-    document.getElementById('tab-' + name).setAttribute('aria-selected', 'true');
-    document.getElementById('panel-' + name).classList.add('active');
-}
+});
 
 // ── Chart factory ──────────────────────────────────────────────────────────────
 function buildChart(canvasId, rows) {

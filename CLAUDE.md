@@ -20,7 +20,13 @@ nothing uses it for login. Don't assume `auth` middleware exists.
 - Local DB is MySQL (Laragon); `.env.example` still says sqlite. Sessions/cache/queue use the `database`
   driver, so the `0001_01_01_*` migrations (users/sessions, cache, jobs) matter.
 - `plesk/ext-laravel-integration` is a composer dependency (Plesk Laravel Toolkit) — the live host is Plesk.
-- Tests: only the stock Laravel `ExampleTest`s exist. `php artisan test` runs them.
+- **Tab / sort selector** — any page that needs one uses the shared pieces rather than its own: include
+  `partials/tab-bar` (`['tabs' => ['key' => 'Label', ...]]`) and call
+  `miteTabs('<page-key>', '<default key>', name => {...})` (defined in `layouts/app`). It marks the active
+  button and **remembers the last selection per page in the browser** (`localStorage` key
+  `mite.tab.<page-key>`, try/catch-guarded). Stats and Causes use it; use it for future pages too.
+- Tests: `php artisan test` (sqlite in-memory, `RefreshDatabase`). Feature tests cover home, stats and the
+  causes page; JS behaviour (sorting, remembering) isn't covered by PHP tests — check it in a browser.
 
 ## Domain model
 

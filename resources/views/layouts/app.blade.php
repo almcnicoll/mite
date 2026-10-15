@@ -221,7 +221,64 @@
     .pagination {
         margin-top: 1rem;
     }
+
+    /* Shared tab / sort selector — see partials/tab-bar.blade.php and miteTabs() below */
+    .tab-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .tab-btn {
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #2c3e50;
+        border-radius: 8px;
+        background: white;
+        color: #2c3e50;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        min-height: 48px;
+    }
+
+    .tab-btn.active {
+        background: #2c3e50;
+        color: white;
+    }
     </style>
+    <script>
+    // Wires up the .tab-btn[data-tab] buttons on a page and remembers the last choice in this
+    // browser (localStorage 'mite.tab.<pageKey>'), restoring it on the next visit.
+    // onSelect(name) is called on load and on every change; returns { select(name) }.
+    function miteTabs(pageKey, fallback, onSelect) {
+        const storageKey = 'mite.tab.' + pageKey;
+        const buttons = Array.from(document.querySelectorAll('.tab-btn[data-tab]'));
+        const names = buttons.map(b => b.dataset.tab);
+
+        function select(name, remember = true) {
+            if (!names.includes(name)) name = fallback;
+            buttons.forEach(b => {
+                const on = b.dataset.tab === name;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            if (remember) {
+                try { localStorage.setItem(storageKey, name); } catch (e) { /* private mode etc. */ }
+            }
+            onSelect(name);
+        }
+
+        buttons.forEach(b => b.addEventListener('click', () => select(b.dataset.tab)));
+
+        let saved = null;
+        try { saved = localStorage.getItem(storageKey); } catch (e) { /* ignore */ }
+        select(saved, false);
+
+        return { select };
+    }
+    </script>
     @yield('head')
 </head>
 
