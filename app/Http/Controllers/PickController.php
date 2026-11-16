@@ -22,7 +22,7 @@ class PickController extends Controller
     }
 
     // The main daily screen — loads or creates today's pick
-    public function today(?string $date = null)
+    public function today(Request $request, ?string $date = null)
     {
         if (!Setup::where('date_from', '<=', today())->exists()) {
             return redirect()->route('setup.index')
@@ -68,6 +68,20 @@ class PickController extends Controller
             ->with('user')
             ->get();
 
+        // Split outstanding picks: the current person's own (full list) vs everyone else's (name + count).
+        $me = $request->attributes->get('currentUser');
+
+        $myOutstanding = $outstanding->where('user_id', $me?->id)->values();
+
+        $othersOutstanding = $outstanding->where('user_id', '!=', $me?->id)
+            ->groupBy('user_id')
+            ->map(fn ($group) => ['name' => $group->first()->user->name, 'count' => $group->count()])
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        // Only the person whose turn it is may choose (a guest pick has no owner, so anyone may).
+        $canChoose = !$pick->user_id || $pick->user_id == $me?->id;
+
         // Build 5 featured causes for the circle UI
         $featured = collect();
 
@@ -96,7 +110,7 @@ class PickController extends Controller
         $featured = $featured->values(); // re-index to 0-based
 
         return view('picks.today', compact(
-            'pick', 'causes', 'users', 'outstanding', 'featured',
+            'pick', 'causes', 'users', 'myOutstanding', 'othersOutstanding', 'canChoose', 'featured',
             'targetDate', 'isToday', 'dateLabel'
         ));
     }

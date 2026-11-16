@@ -3,10 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CauseController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\PersonController;
 use App\Http\Controllers\PickController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\UserController;
 
+Route::get('/who', [PersonController::class, 'choose'])->name('person.choose');
+Route::post('/person', [PersonController::class, 'store'])->name('person.store');
 Route::resource('users',    UserController::class)->except(['show']);
 Route::resource('causes',   CauseController::class);
 Route::resource('donations', DonationController::class)->only(['index', 'create', 'store', 'destroy']);

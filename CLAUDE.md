@@ -10,6 +10,19 @@ cause. Donations are recorded as they're actually paid out, so each cause has a 
 No authentication — every route is open (it's a household tool). `users` has a `password` column but
 nothing uses it for login. Don't assume `auth` middleware exists.
 
+**"Who are you?" (no security, just a device choice).** `App\Http\Middleware\CurrentPerson` (appended to
+the `web` group) reads the `mite_person` cookie (the user id; 5 years; encrypted/HttpOnly by Laravel's
+defaults). A device with no valid cookie is redirected (`redirect()->guest`) to `/who` to pick a name, then
+returned to where it was heading (`POST /person`, `PersonController@store`). Once chosen, a dropdown at the
+top-right of the nav (`layouts/app`) switches person and stays on the same page. The middleware shares
+`$currentUser` (nullable) and `$people` with all views and sets `currentUser` on the request attributes
+(`$request->attributes->get('currentUser')`). If no users exist yet it lets everything through so the first
+one can be created. Every person has access to every feature; the only thing identity affects is the daily
+screen: "My outstanding picks" (full list) vs "Others' picks" (alphabetical name + count, zero omitted), and
+the choose-a-cause area is greyed out/`<fieldset disabled>` unless the pick's `user_id` is the current person
+(guest picks, which have no owner, are open to anyone). The already-chosen card's "Change choice" link is
+deliberately not restricted.
+
 ## Stack
 
 - Laravel 12, Blade views, Eloquent. No JS framework.
@@ -25,8 +38,13 @@ nothing uses it for login. Don't assume `auth` middleware exists.
   `miteTabs('<page-key>', '<default key>', name => {...})` (defined in `layouts/app`). It marks the active
   button and **remembers the last selection per page in the browser** (`localStorage` key
   `mite.tab.<page-key>`, try/catch-guarded). Stats and Causes use it; use it for future pages too.
-- Tests: `php artisan test` (sqlite in-memory, `RefreshDatabase`). Feature tests cover home, stats and the
-  causes page; JS behaviour (sorting, remembering) isn't covered by PHP tests — check it in a browser.
+- Tests: `php artisan test` (sqlite in-memory, `RefreshDatabase`). Feature tests cover home, stats, the
+  causes page and the person chooser; JS behaviour (sorting, remembering) isn't covered by PHP tests —
+  check it in a browser. Because of the "who are you?" gate, web tests must act as a person:
+  `$this->actingAsPerson($this->makeUser('Name', 1))` (helpers in `tests/TestCase.php`).
+  **SQLite quirk:** a `Pick` created through the model stores its date as `Y-m-d 00:00:00`, so the app's
+  `where('date', 'Y-m-d')` lookups miss it (MySQL is fine). In tests that load the same day twice, seed
+  picks with `DB::table('picks')->insert([...'date' => 'Y-m-d'])` (see `PersonTest::rawPick`).
 
 ## Domain model
 

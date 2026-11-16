@@ -16,9 +16,8 @@ class StatsTest extends TestCase
 
     private function causeWithEarnings(string $name, int $days): Cause
     {
-        $user = User::first() ?? User::create([
-            'name' => 'U', 'email' => 'u@example.com', 'rotation_order' => 1, 'password' => 'x',
-        ]);
+        $user = User::first() ?? $this->makeUser('U', 1);
+        $this->actingAsPerson($user);
         $cause = Cause::create(['name' => $name]);
         for ($i = 0; $i < $days; $i++) {
             Pick::create([

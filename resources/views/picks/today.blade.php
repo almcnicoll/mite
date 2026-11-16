@@ -48,10 +48,19 @@
 
 @else
 
-    {{-- Choice UI --}}
-    <form method="POST" action="{{ route('picks.update', $pick) }}" id="pick-form">
+    {{-- Choice UI (disabled unless it's the current person's turn) --}}
+    @unless ($canChoose)
+    <div class="alert" style="background:#e8f0fe; color:#1a4d8f; margin-bottom:1rem;">
+        It's {{ $pick->pickerName() }}'s turn — only they can choose.
+        @if ($currentUser) You're {{ $currentUser->name }}. @endif
+    </div>
+    @endunless
+
+    <form method="POST" action="{{ route('picks.update', $pick) }}" id="pick-form"
+          class="{{ $canChoose ? '' : 'not-your-turn' }}">
         @csrf
         @method('PUT')
+        <fieldset @disabled(!$canChoose) style="border:0; margin:0; padding:0; min-width:0;">
 
         {{-- Hidden fields controlled by JS --}}
         <input type="hidden" name="cause_id"   id="hidden-cause-id"   value="">
@@ -112,21 +121,22 @@
 
         </div>
 
+        </fieldset>
     </form>
 
 @endif
 
-{{-- Outstanding retrospective picks --}}
-@if ($outstanding->count())
+{{-- My outstanding retrospective picks --}}
+@if ($myOutstanding->count())
 <div class="card" style="margin-top:2rem;">
-    <h2>Outstanding picks</h2>
+    <h2>My outstanding picks</h2>
     <p style="margin-bottom:0.75rem; color:#888;">These past days have no cause chosen yet.</p>
     <table>
         <thead>
             <tr><th>Date</th><th>Picker</th><th></th></tr>
         </thead>
         <tbody>
-            @foreach ($outstanding as $p)
+            @foreach ($myOutstanding as $p)
             <tr>
                 <td>{{ $p->date->format('j M Y') }}</td>
                 <td>{{ $p->pickerName() }}</td>
@@ -140,10 +150,34 @@
 </div>
 @endif
 
+{{-- Everyone else's outstanding picks: just a summary --}}
+@if ($othersOutstanding->count())
+<div class="card" style="margin-top:1rem;">
+    <h2>Others' picks</h2>
+    <p style="margin-bottom:0.75rem; color:#888;">Outstanding picks for everyone else.</p>
+    <ul style="list-style:none;">
+        @foreach ($othersOutstanding as $other)
+        <li style="display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #eee;">
+            <span>{{ $other['name'] }}</span>
+            <strong>{{ $other['count'] }}</strong>
+        </li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 @endsection
 
 @section('head')
 <style>
+    /* Not this person's turn: show the choose area but greyed out and inert */
+    .not-your-turn .circles-grid,
+    .not-your-turn .form-group,
+    .not-your-turn .action-row {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+
     .picker-label {
         font-size: 1.2rem;
         margin-bottom: 1.25rem;
@@ -471,6 +505,7 @@ $(function () {
     // ── Circle clicks ─────────────────────────────────────────
 
     $(document).on('click', '.cause-circle:not(.empty)', function () {
+        if ($('#pick-form').hasClass('not-your-turn')) return;
         setSelectedCause($(this).data('id'), this);
         $('#make-choice-btn').focus();
     });

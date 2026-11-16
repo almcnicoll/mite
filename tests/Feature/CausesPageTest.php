@@ -10,6 +10,12 @@ class CausesPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAsPerson($this->makeUser('Me', 1));
+    }
+
     public function test_causes_render_as_tiles_alphabetically_with_sort_selector(): void
     {
         Cause::create(['name' => 'Zebra Trust']);

@@ -49,6 +49,20 @@
         margin-right: auto;
     }
 
+    nav .person-switch {
+        margin: 0;
+    }
+
+    nav .person-switch select {
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid #5d6d7e;
+        background: #34495e;
+        color: #ecf0f1;
+        font-size: 0.95rem;
+        min-height: 38px;
+    }
+
     main {
         max-width: 900px;
         margin: 1.5rem auto;
@@ -284,6 +298,7 @@
 
 <body>
 
+    @unless (View::hasSection('no-nav'))
     <nav>
         <a class="brand" href="{{ route('picks.today') }}">🌱 Mite</a>
         <a href="{{ route('picks.today') }}">Today</a>
@@ -293,7 +308,22 @@
         <a href="{{ route('stats.index') }}">Stats</a>
         <a href="{{ route('users.index') }}">Users</a>
         <a href="{{ route('setup.index') }}">Setup</a>
+        @if ($people->isNotEmpty())
+        {{-- "Who am I" switcher: just a device-level choice stored in a cookie, no security --}}
+        <form method="POST" action="{{ route('person.store') }}" class="person-switch">
+            @csrf
+            <select name="user_id" aria-label="Who are you?" title="Who are you?" onchange="this.form.submit()">
+                @unless ($currentUser)
+                <option value="" selected disabled>Who are you?</option>
+                @endunless
+                @foreach ($people as $person)
+                <option value="{{ $person->id }}" @selected($currentUser?->id == $person->id)>{{ $person->name }}</option>
+                @endforeach
+            </select>
+        </form>
+        @endif
     </nav>
+    @endunless
 
     <main>
         @include('partials.flash')
