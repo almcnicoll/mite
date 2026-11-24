@@ -52,6 +52,16 @@
         </div>
         <button type="submit" class="btn btn-success">Save reminder settings</button>
     </form>
+
+    {{-- View-only: generated from the real email template, so it always matches what's sent --}}
+    <div class="form-group" style="margin-top:1.25rem;">
+        <label for="reminder_email_text">The reminder email (read-only)</label>
+        <textarea id="reminder_email_text" readonly rows="15"
+            style="width:100%; font-family:monospace; font-size:0.9rem; background:#f7f7f7;">{{ $emailPreview }}</textarea>
+        <p style="color:#555; margin-top:0.25rem;">
+            What each person receives. Items in {curly braces} are filled in per person.
+        </p>
+    </div>
 </div>
 
 <div class="card">

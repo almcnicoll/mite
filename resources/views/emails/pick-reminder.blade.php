@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: system-ui, sans-serif; color:#222; font-size:16px; line-height:1.5;">
-    <p>Hi {{ $user->name }},</p>
+    <p>Hi {{ $name }},</p>
 
     <p>
-        You have <strong>{{ $count }}</strong> outstanding {{ \Illuminate\Support\Str::plural('pick', $count) }}
+        You have <strong>{{ $count }}</strong> outstanding {{ $pickWord }}
         &mdash; days when it was your turn but no cause has been chosen yet.
     </p>
 

@@ -224,6 +224,27 @@ class ReminderTest extends TestCase
         $this->get(route('users.edit', $me))->assertOk()->assertDontSee('checked');
     }
 
+    public function test_setup_page_shows_the_email_text_read_only_and_matching_the_real_email(): void
+    {
+        $this->actingAsPerson($this->makeUser('Me', 1));
+
+        $page = $this->get('/setup')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<textarea id="reminder_email_text" readonly[^>]*>/', $page);
+        $this->assertDoesNotMatchRegularExpression('/<textarea[^>]*reminder_email_text[^>]*name=/', $page); // never submitted
+
+        $preview = PickReminder::preview();
+        foreach (['Subject: You have {number} outstanding pick(s) to choose', 'Hi {name},', '{your personal opt-out link}',
+                  'Stop sending me reminders', route('picks.today')] as $expected) {
+            $this->assertStringContainsString($expected, $preview);
+            $this->assertStringContainsString(e($expected), $page); // shown (HTML-escaped) in the textarea
+        }
+
+        // Same template as the real email: its wording appears in an actual rendered send too.
+        $real = (new PickReminder($this->makeUser('Zed', 2), 6))->render();
+        $this->assertStringContainsString('days when it was your turn but no cause has been chosen yet', $real);
+        $this->assertStringContainsString('days when it was your turn but no cause has been chosen yet', $preview);
+    }
+
     public function test_reminder_is_scheduled_daily(): void
     {
         $this->artisan('schedule:list')->expectsOutputToContain('picks:send-reminders')->assertSuccessful();

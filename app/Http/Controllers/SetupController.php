@@ -14,7 +14,8 @@ class SetupController extends Controller
         $threshold         = Setting::donationThreshold();
         $reminderThreshold = Setting::reminderThreshold();
         $remindersOn       = Setting::reminderEmailsEnabled();
-        return view('setup.index', compact('setups', 'threshold', 'reminderThreshold', 'remindersOn'));
+        $emailPreview      = \App\Mail\PickReminder::preview();
+        return view('setup.index', compact('setups', 'threshold', 'reminderThreshold', 'remindersOn', 'emailPreview'));
     }
 
     public function updateReminderThreshold(Request $request)
