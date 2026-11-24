@@ -50,6 +50,16 @@
             <input type="file" name="picture" id="picture" accept="image/*">
         </div>
 
+        <div class="form-group">
+            <input type="hidden" name="reminders_enabled" value="0">
+            <label for="reminders_enabled" style="display:inline;">
+                <input type="checkbox" name="reminders_enabled" id="reminders_enabled" value="1"
+                    style="width:auto; margin-right:0.4rem;"
+                    {{ old('reminders_enabled', $user->reminders_enabled) ? 'checked' : '' }}>
+                Email me reminders about outstanding picks
+            </label>
+        </div>
+
         <div class="actions">
             <button type="submit" class="btn btn-success">Save changes</button>
             <a href="{{ route('users.index') }}" class="btn btn-secondary">Cancel</a>

@@ -11,16 +11,46 @@
 <div class="card">
     <form method="POST" action="{{ route('setup.threshold') }}">
         @csrf
-        @include('partials.errors')
+        @error('donation_threshold')<div class="alert alert-danger">{{ $message }}</div>@enderror
         <div class="form-group">
             <label for="donation_threshold">Ready-for-donation threshold (£)</label>
             <input type="number" name="donation_threshold" id="donation_threshold" step="0.01" min="0"
                 value="{{ old('donation_threshold', $threshold) }}" required>
             <p style="color:#555; margin-top:0.25rem;">
-                Stats flags any cause whose next donation is above this amount.
+                Stats flags any cause whose next donation is at or above this amount.
             </p>
         </div>
         <button type="submit" class="btn btn-success">Save threshold</button>
+    </form>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ route('setup.reminders') }}">
+        @csrf
+        @error('reminder_threshold')<div class="alert alert-danger">{{ $message }}</div>@enderror
+        @error('reminder_emails_enabled')<div class="alert alert-danger">{{ $message }}</div>@enderror
+        <div class="form-group">
+            <input type="hidden" name="reminder_emails_enabled" value="0">
+            <label for="reminder_emails_enabled" style="display:inline;">
+                <input type="checkbox" name="reminder_emails_enabled" id="reminder_emails_enabled" value="1"
+                    style="width:auto; margin-right:0.4rem;"
+                    {{ old('reminder_emails_enabled', $remindersOn) ? 'checked' : '' }}>
+                Enable reminder emails
+            </label>
+            <p style="color:#555; margin-top:0.25rem;">
+                Master switch. Off by default; nothing is emailed until this is ticked.
+            </p>
+        </div>
+        <div class="form-group">
+            <label for="reminder_threshold">Email reminder threshold (outstanding picks)</label>
+            <input type="number" name="reminder_threshold" id="reminder_threshold" step="1" min="0"
+                value="{{ old('reminder_threshold', $reminderThreshold) }}" required>
+            <p style="color:#555; margin-top:0.25rem;">
+                Someone with this many outstanding picks or more gets a reminder email, at most once a week.
+                Set to 0 to turn reminders off.
+            </p>
+        </div>
+        <button type="submit" class="btn btn-success">Save reminder settings</button>
     </form>
 </div>
 

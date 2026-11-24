@@ -11,8 +11,23 @@ class SetupController extends Controller
     public function index()
     {
         $setups = Setup::orderByDesc('date_from')->get();
-        $threshold = Setting::donationThreshold();
-        return view('setup.index', compact('setups', 'threshold'));
+        $threshold         = Setting::donationThreshold();
+        $reminderThreshold = Setting::reminderThreshold();
+        $remindersOn       = Setting::reminderEmailsEnabled();
+        return view('setup.index', compact('setups', 'threshold', 'reminderThreshold', 'remindersOn'));
+    }
+
+    public function updateReminderThreshold(Request $request)
+    {
+        $validated = $request->validate([
+            'reminder_emails_enabled' => 'required|boolean',
+            'reminder_threshold'      => 'required|integer|min:0|max:1000',
+        ]);
+
+        Setting::setReminderEmailsEnabled((bool) $validated['reminder_emails_enabled']);
+        Setting::setReminderThreshold((int) $validated['reminder_threshold']);
+
+        return redirect()->route('setup.index')->with('success', 'Reminder settings updated.');
     }
 
     public function updateThreshold(Request $request)

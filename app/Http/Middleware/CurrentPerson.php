@@ -27,7 +27,7 @@ class CurrentPerson
         View::share('currentUser', $user);
         View::share('people', $people);
 
-        if (!$user && $people->isNotEmpty() && !$request->routeIs('person.*')) {
+        if (!$user && $people->isNotEmpty() && !$request->routeIs('person.*', 'reminders.*')) {
             return redirect()->guest(route('person.choose'));
         }
 

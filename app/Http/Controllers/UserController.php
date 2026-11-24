@@ -55,6 +55,7 @@ class UserController extends Controller
             'picture'        => 'nullable|image|max:2048',
             'rotation_order' => 'required|integer|unique:users,rotation_order,' . $user->id,
             'password'       => 'nullable|string|min:6',
+            'reminders_enabled' => 'boolean',
         ]);
 
         if ($request->hasFile('picture')) {

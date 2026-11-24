@@ -10,9 +10,14 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    protected $fillable = ['name', 'email', 'colour', 'picture', 'rotation_order', 'password'];
+    protected $fillable = ['name', 'email', 'colour', 'picture', 'rotation_order', 'password', 'reminders_enabled'];
 
     protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'reminders_enabled' => 'boolean',
+        'last_reminded_at'  => 'datetime',
+    ];
 
     public function picks(): HasMany
     {

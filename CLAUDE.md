@@ -64,6 +64,17 @@ Key logic:
   from the earliest pick to yesterday, continuing the rotation. It runs on every load of the daily
   screen (`PickController::today`), so missed days "catch up" automatically and show up as *outstanding*
   (picks with a user but no cause, before today).
+- **Reminder emails** — `php artisan picks:send-reminders` (`App\Console\Commands\SendPickReminders`,
+  scheduled daily 09:00 in `routes/console.php`, so the server needs a cron running `schedule:run`) runs the
+  backfill, then emails (via `App\Mail\PickReminder`) each user with `>= Setting::reminderThreshold()`
+  outstanding picks (default **5**; 0 = off; editable on the Setup page). A **master switch** ("Enable reminder emails" on
+  Setup, `Setting::reminderEmailsEnabled()`, **off by default**) must be on or the command does nothing. Rules: only the picker is emailed;
+  at most once a week per person (`users.last_reminded_at`, sent again from the start of day 7); skipped if
+  `users.reminders_enabled` is false; a failed send isn't recorded so it's retried next run. The email's
+  opt-out link is a **signed** URL (`reminders.unsubscribe`, GET asks to confirm, POST opts out; exempt from
+  the "who are you?" gate); re-enable via the checkbox on Users → edit. Email links are built from
+  `APP_URL`, so the server's must be `https://mite.almcnicoll.co.uk`. Local dev uses `MAIL_MAILER=log` (the
+  seeded users have real addresses — never point local/tests at a real mailer).
 - **Amount per pick** is never stored; it's always derived via `Setup::rateFor(pick.date)`.
 - **Stats** — `StatsController` computes earned vs donated per cause in PHP (it re-implements the rate
   lookup inline rather than calling `Setup::rateFor`) and renders two Chart.js bar charts: all-time

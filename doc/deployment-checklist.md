@@ -73,6 +73,27 @@ Server PHP is 8.5.4; the lockfile needs `>= 8.4`, so that's fine.
 - [ ] Note in CLAUDE.md that deployment is live (replace the "not yet set up" status line) and record the
       live URL.
 
+## F. Reminder emails — server setup (once)
+
+The reminder code ships with a normal deploy, but nothing happens until the server can run the scheduler
+and send mail. Items need you (Plesk / server `.env`):
+
+- [ ] Run `php artisan migrate --force` after the deploy that adds the reminder columns on `users`.
+- [ ] **Cron:** add a Plesk Scheduled Task (or the Laravel module's scheduler toggle, if it has one) running
+      `php artisan schedule:run` every 5 minutes, from the site root, with PHP 8.2+. Without this the
+      09:00 daily reminder run never fires.
+- [ ] **Mail:** set real `MAIL_*` values in the server `.env` (Plesk mail server or an SMTP provider):
+      `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` as needed,
+      `MAIL_FROM_ADDRESS` (an address on the domain) and `MAIL_FROM_NAME=Mite`. Set up SPF/DKIM for that
+      sender or the emails may land in spam. Then `php artisan config:clear` if config is cached.
+- [ ] **`APP_URL=https://mite.almcnicoll.co.uk`** and `APP_NAME=Mite` (email links are built from `APP_URL`).
+- [ ] Check `app.timezone` is what you want for "09:00" (defaults to UTC).
+- [ ] **Master switch:** reminder emails ship **off**. Nothing is sent until you tick "Enable reminder emails"
+      on the Setup page — do that last, once cron, mail and `APP_URL` above are done.
+- [ ] Test: tick the switch and temporarily set the threshold on Setup to 1, run `php artisan picks:send-reminders` from the Laravel
+      module, confirm an email arrives and the opt-out link works, then set the threshold back.
+      (Each person is limited to one reminder a week, so a test run uses up that week's reminder.)
+
 ## Later / nice to have
 
 - [ ] Database backups (Plesk scheduled backup or a cron `mysqldump`).

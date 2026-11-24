@@ -5,16 +5,22 @@ use App\Http\Controllers\CauseController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\PickController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\UserController;
 
 Route::get('/who', [PersonController::class, 'choose'])->name('person.choose');
 Route::post('/person', [PersonController::class, 'store'])->name('person.store');
+Route::get('/reminders/unsubscribe/{user}', [ReminderController::class, 'show'])
+    ->middleware('signed')->name('reminders.unsubscribe');
+Route::post('/reminders/unsubscribe/{user}', [ReminderController::class, 'store'])
+    ->middleware('signed')->name('reminders.unsubscribe.store');
 Route::resource('users',    UserController::class)->except(['show']);
 Route::resource('causes',   CauseController::class);
 Route::resource('donations', DonationController::class)->only(['index', 'create', 'store', 'destroy']);
 Route::resource('setup',    SetupController::class)->only(['index', 'create', 'store']);
 Route::post('/setup/threshold', [SetupController::class, 'updateThreshold'])->name('setup.threshold');
+Route::post('/setup/reminders', [SetupController::class, 'updateReminderThreshold'])->name('setup.reminders');
 Route::get('/today', [PickController::class, 'today'])->name('picks.today');
 Route::get('/', [PickController::class, 'today'])->name('picks.today');
 Route::get('/pick/{date}', [PickController::class, 'today'])
