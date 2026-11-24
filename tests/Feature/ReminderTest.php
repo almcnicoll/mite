@@ -245,8 +245,12 @@ class ReminderTest extends TestCase
         $this->assertStringContainsString('days when it was your turn but no cause has been chosen yet', $preview);
     }
 
-    public function test_reminder_is_scheduled_daily(): void
+    public function test_reminder_is_scheduled_daily_at_4pm(): void
     {
-        $this->artisan('schedule:list')->expectsOutputToContain('picks:send-reminders')->assertSuccessful();
+        $event = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
+            ->first(fn ($e) => str_contains($e->command, 'picks:send-reminders'));
+
+        $this->assertNotNull($event, 'picks:send-reminders is not scheduled');
+        $this->assertSame('0 16 * * *', $event->expression);
     }
 }

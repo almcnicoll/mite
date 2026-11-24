@@ -10,4 +10,4 @@ Artisan::command('inspire', function () {
 
 // Needs a cron entry on the server running `php artisan schedule:run` (see doc/deployment-checklist.md).
 // Time is in app.timezone. The command itself limits each person to one reminder a week.
-Schedule::command('picks:send-reminders')->dailyAt('09:00');
+Schedule::command('picks:send-reminders')->dailyAt('16:00');

@@ -65,7 +65,7 @@ Key logic:
   screen (`PickController::today`), so missed days "catch up" automatically and show up as *outstanding*
   (picks with a user but no cause, before today).
 - **Reminder emails** — `php artisan picks:send-reminders` (`App\Console\Commands\SendPickReminders`,
-  scheduled daily 09:00 in `routes/console.php`, so the server needs a cron running `schedule:run`) runs the
+  scheduled daily 16:00 in `routes/console.php`, so the server needs a cron running `schedule:run`) runs the
   backfill, then emails (via `App\Mail\PickReminder`) each user with `>= Setting::reminderThreshold()`
   outstanding picks (default **5**; 0 = off; editable on the Setup page). A **master switch** ("Enable reminder emails" on
   Setup, `Setting::reminderEmailsEnabled()`, **off by default**) must be on or the command does nothing. Rules: only the picker is emailed;
@@ -123,8 +123,8 @@ Deployment mechanism: the live host (Plesk shared hosting, same as the pastoreye
 projects) pulls from git via a Plesk "Git" webhook. **Only deploy when the user asks.** Pushing to
 `working` never deploys.
 
-Status: **webhook URL is in `.deploy-webhook-url`; first deploy done, server first-run setup (`.env`, migrate, storage:link) is the user's** — see [doc/deployment-checklist.md](doc/deployment-checklist.md).
-Once the checklist is done and `.deploy-webhook-url` exists, deploy = in order:
+Status: **live and fully set up** — see [doc/deployment-checklist.md](doc/deployment-checklist.md) for what's in
+place and what (if anything) remains for the user. Deploy = in order:
 
 1. Make sure `working` is clean and `php artisan test` passes; otherwise stop and tell the user.
 2. Check out `master`, merge `working` (ask if conflicts are non-trivial), `git push origin master`.
@@ -132,6 +132,11 @@ Once the checklist is done and `.deploy-webhook-url` exists, deploy = in order:
    It must be **POST** (GET does nothing) and `-k` is required (the Plesk cert doesn't validate from here;
    don't disable TLS verification anywhere else).
 4. Switch back to `working`.
+   - **Check each step succeeded before the next** (don't pipe `git push` into `tail` — it hides the exit
+     code). Only POST the webhook once `origin/master` really has the new commit.
+   - **Push 403?** `gh` has two logins; the active one may be `almcn-occ`, which can't write to
+     `almcnicoll/mite`. Push with `GH_TOKEN="$(gh auth token --user almcnicoll)" git push ...` for that command
+     only, rather than switching the user's global active account.
 5. Flag manual steps the webhook can't do. This host **can't run composer after a deploy**, so
    `vendor/` is **committed to git** (dev packages included — simplest) and arrives via the pull.
    - Any change to `composer.json`/`composer.lock` must be followed by `composer install` locally and

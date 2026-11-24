@@ -1,101 +1,65 @@
 # Deployment checklist — Mite on Plesk
 
-Method (copied from PastorEyes / foxhole, which are on the same Plesk host): a Plesk **Git** repository
-on the server tracks `master` of `github.com/almcnicoll/mite`; a webhook URL tells Plesk to pull.
-Claude merges `working` → `master`, pushes, then POSTs the webhook (see CLAUDE.md "Deploying").
+**Status: live and fully set up** at <https://mite.almcnicoll.co.uk/>. Last verified 2026-11-24.
 
-Items marked **(you)** need Plesk/server access or secrets, which I can't do. Tick as we go.
+Method (same as PastorEyes / foxhole on this Plesk host): a Plesk **Git** repository on the server tracks
+`master` of `github.com/almcnicoll/mite`; a webhook URL tells Plesk to pull. Claude merges `working` → `master`,
+pushes, then POSTs the webhook. The procedure and standing rules are in CLAUDE.md "Deploying".
 
-## A. Server (Plesk) — you
+## Remaining for you
 
-- [x] Create the subdomain/domain for Mite and note the **document root**. It must point at the repo's
-      `public/` directory (e.g. `httpdocs/public`), not the repo root — otherwise `.env`, `vendor/`, etc.
-      are web-served.
-- [x] Set the domain's PHP to **8.2 or newer** (`composer.json` requires `^8.2`) with the usual Laravel
-      extensions (mbstring, openssl, pdo_mysql, tokenizer, xml, ctype, json, fileinfo).
-- [x] Create a MySQL database + user for Mite; note host/name/user/password.
-- [x] Plesk → *Git* → add the repository `https://github.com/almcnicoll/mite.git`, branch **`master`**,
-      deployment mode **automatic** (so the webhook pulls and deploys).
-- [x] ~~Additional deployment actions: `composer install`~~ — **not possible on this host.** Leave the
-      actions empty; Mite has no frontend build, so no npm either. See "Composer is manual" below.
-- [x] Copy the repo's **webhook URL** (Git → repository → *Webhook / Deployment trigger URL*).
+**Nothing is required** — deployment, mail, cron and reminders are all working. Optional:
 
-## Composer is manual → `vendor/` is committed
+- **Recommended — fix the `gh` account so pushes work from this machine.** `gh` has two logins and the active
+  one (`almcn-occ`) has no write access to `almcnicoll/mite`, so every push needs a one-off token for the right
+  account. Running `gh auth switch --user almcnicoll` fixes it (it changes the active account for your other
+  projects too, which is why Claude hasn't done it).
+- **Database backups** — Plesk scheduled backup, or a cron `mysqldump`. The live DB has real data (24 causes,
+  6 people) and there's no backup arrangement on record.
+- **Mine, if you want them** (small, just say): fix `.env.example` defaults (`APP_NAME=Mite`, MySQL instead of
+  sqlite); remove the unused Vite/Tailwind scaffold (`package.json`, `vite.config.js`, `resources/css|js`);
+  GitHub Actions running `php artisan test` on `working`; tests for rotation, backfill and `Setup::rateFor`
+  (feature tests currently cover the daily screen, stats, causes, the person gate and reminders).
 
-The host can't run `composer` after a git deploy, so `vendor/` is committed and arrives with the pull.
-Server PHP is 8.5.4; the lockfile needs `>= 8.4`, so that's fine.
+## Standing rules for each deploy
 
-- [x] `vendor/` removed from `.gitignore` and committed.
-- [ ] **Whenever packages change:** run `composer install` locally, commit `composer.json`,
-      `composer.lock` **and** `vendor/` together, then deploy. Claude flags this if it sees a lock change.
+- **Composer is manual on this host**, so `vendor/` is committed. Whenever packages change: `composer install`
+  locally, then commit `composer.json`, `composer.lock` **and** `vendor/` together. Server PHP is 8.5.4;
+  the lockfile needs `>= 8.4`. Claude flags a lock change before deploying.
+- **Migrations are manual.** The webhook only pulls. If a deploy adds files in `database/migrations/`, run
+  `php artisan migrate --force` on the server (Plesk Laravel module) — Claude flags this after each deploy.
+- Reminder emails have a master switch on the Setup page ("Enable reminder emails").
 
-> **Note:** the app was already live at <https://mite.almcnicoll.co.uk/> before this workflow existed, so
-> most of section B was already done. Remaining known gap: `php artisan storage:link` (images 403 without it).
+## What's in place (all done)
 
-## B. First-time server setup — you (SSH or Plesk "PHP composer"/"Run command")
+### Server (Plesk)
+- [x] Domain with its document root at the repo's `public/` directory
+- [x] PHP 8.5 with the usual Laravel extensions
+- [x] MySQL database and user
+- [x] Git repo tracking `master`, automatic deployment
+- [x] No "additional deployment actions" (composer can't run here; there is no frontend build, so no npm)
+- [x] Webhook URL saved in `.deploy-webhook-url` (gitignored; never commit or paste it)
 
-- [ ] Create `.env` on the server from `.env.example`. Set: `APP_ENV=production`, `APP_DEBUG=false`,
-      `APP_URL=https://<live host>`, `DB_CONNECTION=mysql` + the DB creds, `SESSION_DRIVER=database`,
-      `LOG_LEVEL=warning`. (`.env.example` currently defaults to sqlite/local — don't copy blindly.)
-- [ ] `php artisan key:generate`
-- [ ] `php artisan migrate --force`
-- [ ] `php artisan storage:link` (avatars/pictures use `public/storage`)
-- [ ] Make `storage/` and `bootstrap/cache/` writable by the web user.
-- [ ] **Data**: decide whether live starts empty or from the local DB (dump local → import via phpMyAdmin).
-      Do **not** run `db:seed` on prod (seeders hold real emails + placeholder passwords).
-      Without data you need at least one Setup + one User before `/` works.
-- [ ] `php artisan config:cache && php artisan route:cache && php artisan view:cache` (optional; re-run
-      after `.env` changes).
-- [ ] Smoke test: load `/`, `/stats`, upload a picture on a cause, record a donation.
+### First-time setup
+- [x] Server `.env`, app key, migrations, live data (the site was in use before this workflow existed)
+- [x] `php artisan storage:link` — cause pictures load (checked: all return 200)
+- [x] Smoke test — `/causes`, `/stats`, `/donations`, `/setup`, `/users` load; the site is in daily use.
+      (`/` was deliberately not loaded in the check: opening it creates today's pick.)
+- Optional: if config is ever cached (`config:cache`), re-run it after editing `.env`.
 
-## C. Webhook wiring — us
+### Webhook / deploys
+- [x] POST returns **204** and each deploy reaches the site (checked: live Setup page matches the latest commit)
+- [x] `working` → `master` → push → webhook flow in use; tests (32) pass before each deploy
 
-- [x] Put the webhook URL, bare, in `.deploy-webhook-url` at the repo root (gitignored already).
-- [ ] Dry run: `curl -sk -X POST -w "%{http_code}" "$(cat .deploy-webhook-url)"` → expect `204`.
-- [ ] Confirm in Plesk's Git log that a pull happened.
+### Reminder emails (section F — confirmed complete)
+- [x] Reminder columns migrated (checked: new Users checkbox present on live)
+- [x] Cron running `php artisan schedule:run`
+- [x] Mail configured (`MAIL_*`, sender on the domain, SPF/DKIM)
+- [x] `APP_URL=https://mite.almcnicoll.co.uk` (checked: the live email preview links to that host) and `APP_NAME=Mite`
+- [x] Timezone checked for the daily run (now 16:00; originally 09:00)
+- [x] Master switch on (checked: ticked on live, threshold 5) and tested
 
-## D. Repo prep — me (on `working`)
-
-- [x] `working` branch created from `master`.
-- [x] `.deploy-webhook-url` added to `.gitignore`.
-- [x] `CLAUDE.md` documents workflow + deploy procedure.
-- [ ] Fix `.env.example` defaults for Mite (`APP_NAME=Mite`, `DB_CONNECTION=mysql`) so server setup is
-      less error-prone. *(small; say if you'd like it)*
-- [x] Access control: decided none needed (nothing sensitive). Revisit if that changes.
-- [ ] Remove the unused Vite/Tailwind scaffold (`package.json`, `vite.config.js`, `resources/css|js`)?
-      Optional; avoids Plesk/npm confusion.
-
-## E. First real deploy — us
-
-- [x] `php artisan test` passes on `working`.
-- [ ] Merge `working` → `master`, push, POST webhook (Claude does this on request).
-- [ ] Verify the live site; check `storage/logs/laravel.log` on the server for errors.
-- [ ] Note in CLAUDE.md that deployment is live (replace the "not yet set up" status line) and record the
-      live URL.
-
-## F. Reminder emails — server setup (once)
-
-The reminder code ships with a normal deploy, but nothing happens until the server can run the scheduler
-and send mail. Items need you (Plesk / server `.env`):
-
-- [ ] Run `php artisan migrate --force` after the deploy that adds the reminder columns on `users`.
-- [ ] **Cron:** add a Plesk Scheduled Task (or the Laravel module's scheduler toggle, if it has one) running
-      `php artisan schedule:run` every 5 minutes, from the site root, with PHP 8.2+. Without this the
-      09:00 daily reminder run never fires.
-- [ ] **Mail:** set real `MAIL_*` values in the server `.env` (Plesk mail server or an SMTP provider):
-      `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME` as needed,
-      `MAIL_FROM_ADDRESS` (an address on the domain) and `MAIL_FROM_NAME=Mite`. Set up SPF/DKIM for that
-      sender or the emails may land in spam. Then `php artisan config:clear` if config is cached.
-- [ ] **`APP_URL=https://mite.almcnicoll.co.uk`** and `APP_NAME=Mite` (email links are built from `APP_URL`).
-- [ ] Check `app.timezone` is what you want for "09:00" (defaults to UTC).
-- [ ] **Master switch:** reminder emails ship **off**. Nothing is sent until you tick "Enable reminder emails"
-      on the Setup page — do that last, once cron, mail and `APP_URL` above are done.
-- [ ] Test: tick the switch and temporarily set the threshold on Setup to 1, run `php artisan picks:send-reminders` from the Laravel
-      module, confirm an email arrives and the opt-out link works, then set the threshold back.
-      (Each person is limited to one reminder a week, so a test run uses up that week's reminder.)
-
-## Later / nice to have
-
-- [ ] Database backups (Plesk scheduled backup or a cron `mysqldump`).
-- [ ] GitHub Actions running `php artisan test` on `working` pushes.
-- [ ] Real tests for rotation, backfill and `Setup::rateFor` — the only tests today are Laravel's stock examples.
+### How this was verified (2026-11-24)
+Checked from outside against the live site: pages load, latest commit deployed, images served, `APP_URL`,
+switch/threshold values, migration columns. **Not checkable from outside**, so taken on your word: cron, SMTP
+delivery, timezone, and `.env` values such as `APP_DEBUG=false` (a missing page shows no stack trace).
